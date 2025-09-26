@@ -3,6 +3,26 @@ entries:
   server-manager:
   - apiVersion: v2
     appVersion: 1.1.0
+    created: "2025-09-26T14:20:14.539470926Z"
+    description: Helm chart for deploying Danielv123 Server Manager
+    digest: f8984719e950eb3c9128f866f9238c533fc6e2ea7380011cc56a44894d64a84b
+    home: https://github.com/NitriKx/serverManager
+    keywords:
+    - server
+    - manager
+    - ipmi
+    maintainers:
+    - name: NitriKx
+    name: server-manager
+    sources:
+    - https://github.com/NitriKx/serverManager
+    - https://github.com/Danielv123/serverManager
+    type: application
+    urls:
+    - https://github.com/NitriKx/ipmi-server-manager/releases/download/server-manager-0.2.1/server-manager-0.2.1.tgz
+    version: 0.2.1
+  - apiVersion: v2
+    appVersion: 1.1.0
     created: "2025-09-26T14:07:22.068465468Z"
     description: Helm chart for deploying Danielv123 Server Manager
     digest: 917d753a3f57908adcf5752506d08b792bcfaae242d3c74b7b2ad6258e674692
@@ -41,4 +61,4 @@ entries:
     urls:
     - https://github.com/NitriKx/ipmi-server-manager/releases/download/server-manager-0.1.0/server-manager-0.1.0.tgz
     version: 0.1.0
-generated: "2025-09-26T14:07:22.068473643Z"
+generated: "2025-09-26T14:20:14.53948396Z"
