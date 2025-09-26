@@ -1,0 +1,22 @@
+# Patterns to ignore when packaging Helm charts.
+# This supports shell glob matching, relative path matching, and
+# negation (prefixed with !).
+# Ref: https://helm.sh/docs/helm/helm_package/
+
+.DS_Store
+# Common VCS dirs
+.git/
+.gitignore
+.bzr/
+.hg/
+.svn/
+# Common backup files
+*.swp
+*.bak
+*.tmp
+*.orig
+*~
+
+# IDE files
+.idea/
+.vscode/
