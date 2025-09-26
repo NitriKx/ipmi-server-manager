@@ -90,6 +90,50 @@ servers.forEach(async (server) => {
 	}
 })
 
+let isShuttingDown = false
+
+async function restoreAutomaticFanControlOnAllServers() {
+	console.log("Restoring automatic fan control on all registered servers before shutdown")
+	await Promise.all(
+		servers.map(async (server) => {
+			try {
+				await enableAutomaticFancontrol(server)
+			} catch (error) {
+				console.error(
+					`Failed to restore automatic fan control for ${server.name || server.address}:`,
+					error
+				)
+			}
+		})
+	)
+}
+
+async function gracefulShutdown({ code = 0, reason } = {}) {
+	if (isShuttingDown) return
+	isShuttingDown = true
+	if (reason) {
+		console.log(`Received ${reason}, shutting down gracefully`)
+	}
+	try {
+		await restoreAutomaticFanControlOnAllServers()
+	} catch (error) {
+		console.error("Error while restoring automatic fan control during shutdown:", error)
+	} finally {
+		process.exit(code)
+	}
+}
+
+process.on("SIGINT", () => gracefulShutdown({ code: 0, reason: "SIGINT" }))
+process.on("SIGTERM", () => gracefulShutdown({ code: 0, reason: "SIGTERM" }))
+process.on("uncaughtException", (error) => {
+	console.error("Uncaught exception:", error)
+	gracefulShutdown({ code: 1, reason: "uncaughtException" })
+})
+process.on("unhandledRejection", (error) => {
+	console.error("Unhandled promise rejection:", error)
+	gracefulShutdown({ code: 1, reason: "unhandledRejection" })
+})
+
 async function updateServers() {
 	for (let i in servers) {
 		let config = servers[i]
