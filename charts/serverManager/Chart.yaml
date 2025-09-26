@@ -7,9 +7,10 @@ appVersion: "1.0.0"
 keywords:
   - server
   - manager
+  - ipmi
 home: https://github.com/Danielv123/serverManager
 sources:
   - https://github.com/Danielv123/serverManager
 maintainers:
-  - name: serverManager Maintainers
+  - name: NitriKx
 
