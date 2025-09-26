@@ -1,0 +1,15 @@
+apiVersion: v2
+name: server-manager
+description: Helm chart for deploying Danielv123 Server Manager
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - server
+  - manager
+home: https://github.com/Danielv123/serverManager
+sources:
+  - https://github.com/Danielv123/serverManager
+maintainers:
+  - name: serverManager Maintainers
+

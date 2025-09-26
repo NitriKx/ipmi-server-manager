@@ -1,0 +1,93 @@
+replicaCount: 1
+
+controller:
+  kind: Deployment # Supported: Deployment, StatefulSet
+  updateStrategy: {}
+
+image:
+  repository: ghcr.io/danielv123/servermanager
+  tag: latest
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 8080
+  annotations: {}
+  labels: {}
+  loadBalancerIP: ""
+  externalTrafficPolicy: ""
+  clusterIP: ""
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  labels: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+resources: {}
+
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+
+env: []
+envFrom: []
+
+persistence:
+  enabled: false
+  accessModes:
+    - ReadWriteOnce
+  size: 10Mi
+  storageClass: ""
+  existingClaim: ""
+  annotations: {}
+  labels: {}
+  mountPath: /usr/src/app/data
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+topologySpreadConstraints: []
+
+extraVolumeMounts: []
+extraVolumes: []
+
+extraManifests: []
+

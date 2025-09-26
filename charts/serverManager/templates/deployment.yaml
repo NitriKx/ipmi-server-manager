@@ -1,0 +1,115 @@
+{{- if or (not .Values.controller.kind) (eq .Values.controller.kind "Deployment") }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "server-manager.fullname" . }}
+  labels:
+    {{- include "server-manager.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "server-manager.selectorLabels" . | nindent 6 }}
+  {{- if .Values.controller.updateStrategy }}
+  strategy:
+    {{- toYaml .Values.controller.updateStrategy | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      labels:
+        {{- include "server-manager.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "server-manager.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "server-manager.name" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          {{- with .Values.envFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            {{- omit .Values.livenessProbe "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            {{- omit .Values.readinessProbe "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- $volumeMounts := list }}
+          {{- if .Values.persistence.enabled }}
+          {{- $volumeMounts = append $volumeMounts (dict "name" "data" "mountPath" .Values.persistence.mountPath) }}
+          {{- end }}
+          {{- if .Values.extraVolumeMounts }}
+          {{- $volumeMounts = concat $volumeMounts .Values.extraVolumeMounts }}
+          {{- end }}
+          {{- if $volumeMounts }}
+          volumeMounts:
+            {{- toYaml $volumeMounts | nindent 12 }}
+          {{- end }}
+      {{- $volumes := list }}
+      {{- if .Values.persistence.enabled }}
+        {{- $pvc := dict "name" "data" "persistentVolumeClaim" (dict) }}
+        {{- if .Values.persistence.existingClaim }}
+          {{- $_ := set (index $pvc "persistentVolumeClaim") "claimName" .Values.persistence.existingClaim }}
+        {{- else }}
+          {{- $_ := set (index $pvc "persistentVolumeClaim") "claimName" (include "server-manager.fullname" .) }}
+        {{- end }}
+        {{- $volumes = append $volumes $pvc }}
+      {{- end }}
+      {{- if .Values.extraVolumes }}
+      {{- $volumes = concat $volumes .Values.extraVolumes }}
+      {{- end }}
+      {{- if $volumes }}
+      volumes:
+        {{- toYaml $volumes | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+
