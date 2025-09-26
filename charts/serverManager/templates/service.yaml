@@ -15,8 +15,6 @@ spec:
   type: {{ .Values.service.type }}
   {{- if .Values.service.clusterIP }}
   clusterIP: {{ .Values.service.clusterIP }}
-  {{- else if eq .Values.controller.kind "StatefulSet" }}
-  clusterIP: None
   {{- end }}
   {{- if .Values.service.loadBalancerIP }}
   loadBalancerIP: {{ .Values.service.loadBalancerIP }}
