@@ -93,7 +93,7 @@ This chart deploys the [`danielv123/servermanager`](https://github.com/Danielv12
 
 ## Usage
 ```bash
-helm dependency update charts/serverManager
+helm dependency update https:///serverManager
 helm install my-servermanager charts/serverManager
 ```
 
