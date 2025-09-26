@@ -8,8 +8,9 @@ keywords:
   - server
   - manager
   - ipmi
-home: https://github.com/Danielv123/serverManager
+home: https://github.com/NitriKx/serverManager
 sources:
+  - https://github.com/NitriKx/serverManager
   - https://github.com/Danielv123/serverManager
 maintainers:
   - name: NitriKx
