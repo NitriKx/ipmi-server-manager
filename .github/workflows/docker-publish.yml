@@ -43,6 +43,9 @@ jobs:
     needs: test
 
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     if: github.event_name == 'push'
 
     steps:
@@ -52,7 +55,7 @@ jobs:
         run: docker build . --file Dockerfile --tag $IMAGE_NAME
 
       - name: Log into registry
-        run: echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Push image
         run: |

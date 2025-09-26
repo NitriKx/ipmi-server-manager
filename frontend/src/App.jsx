@@ -197,9 +197,16 @@ class App extends Component {
 														<Input />
 													</Form.Item>
 													<Divider>Custom fan control</Divider>
-													<Form.Item label="Custom fan control" name="manualFanControl">
+						<Form.Item label="Custom fan control" name="manualFanControl" valuePropName="checked">
 														<Switch checkedChildren="Enabled" unCheckedChildren="Disabled" />
 													</Form.Item>
+						<Form.Item
+							label="Restore auto fan control on exit"
+							name="restoreFanControlOnExit"
+							valuePropName="checked"
+						>
+							<Switch checkedChildren="Enabled" unCheckedChildren="Disabled" />
+						</Form.Item>
 													<Row>
 														<Col span={layout.labelCol.span}></Col>
 														<Col span={layout.wrapperCol.span}>

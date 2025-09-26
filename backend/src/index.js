@@ -37,18 +37,37 @@ const { getSensors, enableManualFancontrol, enableAutomaticFancontrol, setFanSpe
 mkdirp.sync("./data")
 
 let serversOnDisk = ""
+let servers = []
+
+function applyServerDefaults(server = {}) {
+	if (typeof server.restoreFanControlOnExit !== "boolean") {
+		server.restoreFanControlOnExit = true
+	}
+	return server
+}
+
 try {
 	let data = fs.readFileSync("./data/servers.json", "utf8")
 	if (data) {
 		serversOnDisk = data
-		servers = JSON.parse(data)
+		servers = JSON.parse(data).map(applyServerDefaults)
 		console.log("Loaded server data from disk")
 	}
 } catch (e) {}
 function save() {
 	if (JSON.stringify(servers, null, 4) !== serversOnDisk) {
 		serversOnDisk = JSON.stringify(servers, null, 4)
-		fs.writeFileSync("./data/servers.json", JSON.stringify(servers, null, 4))
+		fs.writeFileSync(
+			"./data/servers.json",
+			JSON.stringify(
+				servers.map(({ restoreFanControlOnExit, ...rest }) => ({
+					...rest,
+					restoreFanControlOnExit,
+				})),
+				null,
+				4
+			)
+		)
 		// console.log(Date.now() + "Saved servers")
 	}
 }
@@ -60,26 +79,28 @@ const clients = [
 	//     socket: {},
 	// }
 ]
-var servers = servers || [
-	{
-		name: "R720 main",
-		address: "192.168.10.170",
-		username: "root",
-		password: "calvin",
-		warnspeed: "3000",
-		sensordataRaw: [],
-		sensordata: [],
-	},
-	{
-		name: "R720 secondary",
-		address: "192.168.10.169",
-		username: "root",
-		password: "calvin",
-		warnspeed: "3000",
-		sensordataRaw: [],
-		sensordata: [],
-	},
-]
+if (!servers.length) {
+	servers = [
+		{
+			name: "R720 main",
+			address: "192.168.10.170",
+			username: "root",
+			password: "calvin",
+			warnspeed: "3000",
+			sensordataRaw: [],
+			sensordata: [],
+		},
+		{
+			name: "R720 secondary",
+			address: "192.168.10.169",
+			username: "root",
+			password: "calvin",
+			warnspeed: "3000",
+			sensordataRaw: [],
+			sensordata: [],
+		},
+	].map(applyServerDefaults)
+}
 
 // Startup tasks
 servers.forEach(async (server) => {
@@ -93,9 +114,14 @@ servers.forEach(async (server) => {
 let isShuttingDown = false
 
 async function restoreAutomaticFanControlOnAllServers() {
-	console.log("Restoring automatic fan control on all registered servers before shutdown")
+	const serversToRestore = servers.filter((server) => server.restoreFanControlOnExit !== false)
+	if (!serversToRestore.length) {
+		console.log("All servers opted out of restoring automatic fan control on shutdown")
+		return
+	}
+	console.log("Restoring automatic fan control on registered servers before shutdown")
 	await Promise.all(
-		servers.map(async (server) => {
+		serversToRestore.map(async (server) => {
 			try {
 				await enableAutomaticFancontrol(server)
 			} catch (error) {
@@ -233,17 +259,18 @@ io.on("connection", (socket) => {
 			// If we toggled the manualFanControl option, run IPMI to toggle fan control mode
 			if (server.manualFanControl !== update.manualFanControl) {
 				console.time("Changed fan control state")
-				if (update.manualFanControl) {
-					await enableManualFancontrol(update)
-				} else {
-					await enableAutomaticFancontrol(update)
-				}
+			if (update.manualFanControl) {
+				await enableManualFancontrol(update)
+			} else {
+				await enableAutomaticFancontrol(update)
+			}
 				console.timeEnd("Changed fan control state")
 			}
 
 			for (let key of Object.keys(update)) {
 				server[key] = update[key]
 			}
+			applyServerDefaults(server)
 			broadcast("servers", servers)
 
 			// Reset prometheus gauges in case some of the label names were changed
@@ -259,7 +286,7 @@ io.on("connection", (socket) => {
 				server.username &&
 				server.password
 			) {
-				servers.push(server)
+				servers.push(applyServerDefaults(server))
 				broadcast("servers", servers)
 			}
 		})
