@@ -1,4 +1,4 @@
-FROM node:14 AS builder
+FROM node:18-bullseye-slim AS builder
 
 WORKDIR /usr/src/app
 
@@ -11,14 +11,17 @@ RUN npm ci --only=production
 COPY frontend/ .
 RUN npm run build
 
-FROM node:14-alpine
+FROM node:18-bullseye-slim
 
-LABEL org.opencontainers.image.source https://github.com/Danielv123/serverManager
+LABEL org.opencontainers.image.source https://github.com/NitriKx/serverManager
 
 # Open a port in the firewall
 EXPOSE 8080
 
-RUN apk add ipmitool
+RUN apt-get update && \
+	apt-get install -y --no-install-recommends ipmitool && \
+	apt-get clean && \
+	rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
 
