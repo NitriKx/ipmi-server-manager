@@ -3,6 +3,7 @@ const mkdirp = require("mkdirp")
 const express = require("express")
 const http = require("http")
 const promclient = require("prom-client")
+const { instrument } = require("@socket.io/admin-ui")
 const process = require("process")
 
 console.log(process.argv)
@@ -10,7 +11,16 @@ const port = process.argv[2] === "dev" ? 8082 : 8080
 
 var app = express()
 var server = http.createServer(app)
-var io = require("socket.io").listen(server)
+var { Server } = require("socket.io")
+var io = new Server(server, {
+	cors: {
+		origin: ["https://admin.socket.io", process.env.SOCKET_ADMIN_ORIGIN].filter(Boolean),
+		credentials: true,
+	},
+})
+instrument(io, {
+	auth: false,
+})
 server.listen(port)
 console.log("listening on port ", port)
 
@@ -20,8 +30,15 @@ app.get("/info", (req, res) => {
 })
 
 // Set up prometheus
-app.get("/metrics", (req, res) => {
-	res.send(promclient.register.metrics())
+app.get("/metrics", async (req, res) => {
+	try {
+		const output = await promclient.register.metrics()
+		res.setHeader("Content-Type", promclient.register.contentType)
+		res.send(output)
+	} catch (error) {
+		console.error("Failed to collect metrics", error)
+		res.status(500).send(error.message)
+	}
 })
 promclient.collectDefaultMetrics({
 	labels: { application: "serverManager" },

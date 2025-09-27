@@ -1,9 +1,26 @@
 import React, { Component } from "react"
-import "antd/dist/antd.dark.css"
+import "antd/dist/reset.css"
 import "./App.css"
 import { getWebclient } from "./api/index"
 import Switch from "./components/Switch"
-import { Layout, Menu, Typography, Card, Row, Col, Statistic, Divider, Tooltip, Tabs, Button, Input, Form, Popover } from "antd"
+import {
+	ConfigProvider,
+	Layout,
+	Menu,
+	Typography,
+	Card,
+	Row,
+	Col,
+	Statistic,
+	Divider,
+	Tooltip,
+	Tabs,
+	Button,
+	Input,
+	Form,
+	Popover,
+	theme,
+} from "antd"
 import { LaptopOutlined, PlusOutlined, ArrowUpOutlined, ArrowDownOutlined, DeleteOutlined, SaveOutlined, SettingOutlined } from "@ant-design/icons"
 import InlineSlider from "./components/InlineSlider"
 
@@ -61,8 +78,8 @@ class App extends Component {
 	render() {
 		let servers = this.state.servers.filter((x) => this.state.selectedKeys.includes(x.address))
 		return (
-			<Layout style={{ height: "100%" }}>
-				<Layout>
+			<ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
+				<Layout style={{ height: "100%" }}>
 					<Sider width={200} className="site-layout-background">
 						<Menu
 							multiple
@@ -319,7 +336,7 @@ class App extends Component {
 						</Content>
 					</Layout>
 				</Layout>
-			</Layout>
+			</ConfigProvider>
 		)
 	}
 }
