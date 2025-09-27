@@ -16,15 +16,19 @@ function logCommandResult(label, error, out, err) {
 	}
 }
 
+function parseSensorOutput(out) {
+	return (out || "")
+		.split("\n")
+		.map((x) => x.split("|").map((y) => y.trim()))
+		.filter((x) => x[0] && x[1] !== "na")
+}
+
 function getSensors(config) {
 	return new Promise((resolve) => {
 		let command = `ipmitool -I lanplus -H ${config.address} -U ${config.username} -P '${config.password}' sensor`
 		exec(command, (error, out, err) => {
 			logCommandResult("getSensors", error, out, err)
-			let data = (out || "")
-				.split("\n")
-				.map((x) => x.split("|").map((y) => y.trim()))
-				.filter((x) => x[1] !== "na" && x[0])
+			let data = parseSensorOutput(out)
 			// console.log(data)
 			resolve(data)
 		})
@@ -67,4 +71,5 @@ module.exports = {
 	enableManualFancontrol,
 	enableAutomaticFancontrol,
 	setFanSpeed,
+	parseSensorOutput,
 }
