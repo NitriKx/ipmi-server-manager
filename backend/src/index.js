@@ -221,23 +221,27 @@ async function updateServers() {
 		if (config.manualFanControl) {
 			const ambientTemperature = getAmbientTemperature(config.sensordata)
 			const cpuTemperature = getMaxCpuTemperature(config.sensordata)
+
 			const fallbackTemperature = getFallbackTemperature(config.sensordata)
+			
 			const baselineTable = buildFanCurveTable(config.fancurve)
 			const reactiveTable = buildFanCurveTable(config.reactiveFanCurve)
-	let baselineFanSpeed = getFanSpeedFromTable(baselineTable, ambientTemperature)
-	if (baselineFanSpeed === undefined) {
-		baselineFanSpeed = getFanSpeedFromTable(baselineTable, fallbackTemperature)
-	}
-	let reactiveFanSpeed = getFanSpeedFromTable(reactiveTable, cpuTemperature)
-	if (reactiveFanSpeed === undefined) {
-		reactiveFanSpeed = getFanSpeedFromTable(reactiveTable, fallbackTemperature)
-	}
-	const computedSpeeds = [baselineFanSpeed, reactiveFanSpeed].filter((value) => Number.isFinite(value))
-	let targetFanSpeed = computedSpeeds.length ? Math.max(...computedSpeeds) : undefined
-	if (!Number.isFinite(targetFanSpeed)) {
-		targetFanSpeed = getNumericFanSpeed(config.errorFanSpeed)
-	}
-	targetFanSpeed = clamp(Number.isFinite(targetFanSpeed) ? targetFanSpeed : DEFAULT_ERROR_FAN_SPEED, 0, 100)
+			
+			let baselineFanSpeed = getFanSpeedFromTable(baselineTable, ambientTemperature)
+			if (baselineFanSpeed === undefined) {
+				baselineFanSpeed = getFanSpeedFromTable(baselineTable, fallbackTemperature)
+			}
+			let reactiveFanSpeed = getFanSpeedFromTable(reactiveTable, cpuTemperature)
+			if (reactiveFanSpeed === undefined) {
+				reactiveFanSpeed = getFanSpeedFromTable(reactiveTable, fallbackTemperature)
+			}
+			const computedSpeeds = [baselineFanSpeed, reactiveFanSpeed].filter((value) => Number.isFinite(value))
+			let targetFanSpeed = computedSpeeds.length ? Math.max(...computedSpeeds) : undefined
+			if (!Number.isFinite(targetFanSpeed)) {
+				targetFanSpeed = getNumericFanSpeed(config.errorFanSpeed)
+			}
+			
+			targetFanSpeed = clamp(Number.isFinite(targetFanSpeed) ? targetFanSpeed : DEFAULT_ERROR_FAN_SPEED, 0, 100)
 			console.log(
 				"Ambient temp:",
 				ambientTemperature,

@@ -20,7 +20,7 @@ function getMaxCpuTemperature(sensors) {
 	}
 	const cpuSensors = sensors.filter((sensor) => {
 		const name = sensor?.name
-		return sensor?.unit === "degrees C" && typeof name === "string" && /cpu/i.test(name)
+		return sensor?.unit === "degrees C" && typeof name === "string" && name === "Temp"
 	})
 	const cpuTemperatures = cpuSensors
 		.map(getNumericSensorValue)

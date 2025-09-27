@@ -1,4 +1,4 @@
-FROM node:18-bullseye-slim AS builder
+FROM node:24-bullseye-slim AS builder
 
 WORKDIR /usr/src/app
 
@@ -11,7 +11,7 @@ RUN npm ci --only=production
 COPY frontend/ .
 RUN npm run build
 
-FROM node:18-bullseye-slim
+FROM node:24-bullseye-slim
 
 LABEL org.opencontainers.image.source https://github.com/NitriKx/serverManager
 
