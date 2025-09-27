@@ -1,12 +1,27 @@
 var exec = require("child_process").exec
 
+function logCommandResult(label, error, out, err) {
+	const hasStdout = typeof out === "string" && out.trim().length > 0
+	const hasStderr = typeof err === "string" && err.trim().length > 0
+	if (error) {
+		if (hasStdout) {
+			console.warn(`${label} command reported an error`, error)
+			// console.warn(`${label} stdout:\n` + out)
+		} else {
+			console.error(`${label} command failed`, error)
+		}
+		if (hasStderr) {
+			console.error(`${label} stderr:\n` + err)
+		}
+	}
+}
+
 function getSensors(config) {
 	return new Promise((resolve) => {
 		let command = `ipmitool -I lanplus -H ${config.address} -U ${config.username} -P '${config.password}' sensor`
 		exec(command, (error, out, err) => {
-			if (error) console.error(error)
-			if (err) console.error(err)
-			let data = out
+			logCommandResult("getSensors", error, out, err)
+			let data = (out || "")
 				.split("\n")
 				.map((x) => x.split("|").map((y) => y.trim()))
 				.filter((x) => x[1] !== "na" && x[0])
@@ -19,8 +34,7 @@ function enableManualFancontrol(config) {
 	return new Promise((resolve) => {
 		let command = `ipmitool -I lanplus -H ${config.address} -U ${config.username} -P '${config.password}' raw 0x30 0x30 0x01 0x00`
 		exec(command, (error, out, err) => {
-			// console.log(error, out, err)
-			// console.log(data)
+			logCommandResult("enableManualFancontrol", error, out, err)
 			resolve(out)
 		})
 	})
@@ -29,8 +43,7 @@ function enableAutomaticFancontrol(config) {
 	return new Promise((resolve) => {
 		let command = `ipmitool -I lanplus -H ${config.address} -U ${config.username} -P '${config.password}' raw 0x30 0x30 0x01 0x01`
 		exec(command, (error, out, err) => {
-			// console.log(error, out, err)
-			// console.log(data)
+			logCommandResult("enableAutomaticFancontrol", error, out, err)
 			resolve(out)
 		})
 	})
@@ -43,8 +56,7 @@ function setFanSpeed(config, speed) {
 			var command = "ls"
 		}
 		exec(command, (error, out, err) => {
-			// console.log(error, out, err)
-			// console.log(data)
+			logCommandResult("setFanSpeed", error, out, err)
 			resolve(out)
 		})
 	})

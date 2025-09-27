@@ -2,8 +2,8 @@ apiVersion: v2
 name: server-manager
 description: Helm chart for deploying Danielv123 Server Manager
 type: application
-version: 0.2.1
-appVersion: "1.1.0"
+version: 0.2.2
+appVersion: "1.2.0"
 keywords:
   - server
   - manager

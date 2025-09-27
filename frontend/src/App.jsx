@@ -196,25 +196,39 @@ class App extends Component {
 													>
 														<Input />
 													</Form.Item>
+													<Form.Item
+														label="Error fan speed (%)"
+														name="errorFanSpeed"
+														rules={[
+															{
+																required: true,
+																message: "Please input the fallback fan speed",
+															},
+														]}
+													>
+														<Input type="number" min={0} max={100} suffix="%" />
+													</Form.Item>
 													<Divider>Custom fan control</Divider>
-						<Form.Item label="Custom fan control" name="manualFanControl" valuePropName="checked">
+													<Form.Item label="Custom fan control" name="manualFanControl" valuePropName="checked">
 														<Switch checkedChildren="Enabled" unCheckedChildren="Disabled" />
 													</Form.Item>
-						<Form.Item
-							label="Restore auto fan control on exit"
-							name="restoreFanControlOnExit"
-							valuePropName="checked"
-						>
-							<Switch checkedChildren="Enabled" unCheckedChildren="Disabled" />
-						</Form.Item>
+													<Form.Item
+														label="Restore auto fan control on exit"
+														name="restoreFanControlOnExit"
+														valuePropName="checked"
+													>
+														<Switch checkedChildren="Enabled" unCheckedChildren="Disabled" />
+													</Form.Item>
 													<Row>
 														<Col span={layout.labelCol.span}></Col>
 														<Col span={layout.wrapperCol.span}>
-															<Form.List {...tailLayout} name="fancurve">
+															<Typography.Text strong>Baseline (ambient) fan curve</Typography.Text>
+															<Form.List name="fancurve">
 																{(fields, { add }) => (
 																	<>
 																		{fields.map((field, index) => (
 																			<div
+																				key={field.key}
 																				style={{
 																					...field.style,
 																					display: "inline-block",
@@ -226,11 +240,47 @@ class App extends Component {
 																						max={100}
 																						vertical
 																						defaultValue={20}
-																						marks={index === fields.length - 1 && sliderMarks} // Show percentage marks on the rightmost slider
-																						// tooltipVisible={true} // Is kinda nice, but cluttered and lags *a lot*
+																						marks={index === fields.length - 1 && sliderMarks}
 																					/>
 																				</Form.Item>
-																				<p>{Math.floor((index / (fields.length - 1)) * 100)}°C</p>
+																				<p>{Math.floor((index / (fields.length - 1 || 1)) * 100)}°C</p>
+																			</div>
+																		))}
+																		<Form.Item>
+																			<Button type="dashed" onClick={() => add()} icon={<PlusOutlined />}>
+																				Add point to curve
+																			</Button>
+																		</Form.Item>
+																	</>
+																)}
+															</Form.List>
+														</Col>
+													</Row>
+													<Row style={{ marginTop: 16 }}>
+														<Col span={layout.labelCol.span}></Col>
+														<Col span={layout.wrapperCol.span}>
+															<Typography.Text strong>Reactive (CPU boost) fan curve</Typography.Text>
+															<Form.List name="reactiveFanCurve">
+																{(fields, { add }) => (
+																	<>
+																		{fields.map((field, index) => (
+																			<div
+																				key={field.key}
+																				style={{
+																					...field.style,
+																					display: "inline-block",
+																				}}
+																			>
+																				<Form.Item {...field}>
+																					<InlineSlider
+																						min={0}
+																						max={100}
+																						vertical
+																						defaultValue={20}
+																						marks={index === fields.length - 1 && sliderMarks}
+																					/>
+																				</Form.Item>
+																				<p>{Math.floor((index / (fields.length - 1 || 1)) * 100)}°C</p>
 																			</div>
 																		))}
 																		<Form.Item>

@@ -34,6 +34,28 @@ const gauge = new promclient.Gauge({
 
 const units = require("./units")
 const { getSensors, enableManualFancontrol, enableAutomaticFancontrol, setFanSpeed } = require("./ipmi")
+const {
+	DEFAULT_BASELINE_FAN_CURVE,
+	DEFAULT_REACTIVE_FAN_CURVE,
+	buildFanCurveTable,
+	normalizeFanCurve,
+	getFanSpeedFromTable,
+} = require("./fanCurve")
+const { getAmbientTemperature, getMaxCpuTemperature, getFallbackTemperature } = require("./temperature")
+
+const DEFAULT_ERROR_FAN_SPEED = 100
+
+function clamp(value, min, max) {
+	return Math.min(max, Math.max(min, value))
+}
+
+function getNumericFanSpeed(value, fallback = DEFAULT_ERROR_FAN_SPEED) {
+	const numericValue = Number(value)
+	if (!Number.isFinite(numericValue)) {
+		return fallback
+	}
+	return clamp(Math.round(numericValue), 0, 100)
+}
 mkdirp.sync("./data")
 
 let serversOnDisk = ""
@@ -43,6 +65,11 @@ function applyServerDefaults(server = {}) {
 	if (typeof server.restoreFanControlOnExit !== "boolean") {
 		server.restoreFanControlOnExit = true
 	}
+	const baselineCurve = normalizeFanCurve(server.fancurve, DEFAULT_BASELINE_FAN_CURVE)
+	const reactiveCurve = normalizeFanCurve(server.reactiveFanCurve, DEFAULT_REACTIVE_FAN_CURVE)
+	server.fancurve = [...baselineCurve]
+	server.reactiveFanCurve = [...reactiveCurve]
+	server.errorFanSpeed = getNumericFanSpeed(server.errorFanSpeed, DEFAULT_ERROR_FAN_SPEED)
 	return server
 }
 
@@ -89,6 +116,9 @@ if (!servers.length) {
 			warnspeed: "3000",
 			sensordataRaw: [],
 			sensordata: [],
+			fancurve: [...DEFAULT_BASELINE_FAN_CURVE],
+			reactiveFanCurve: [...DEFAULT_REACTIVE_FAN_CURVE],
+			errorFanSpeed: DEFAULT_ERROR_FAN_SPEED,
 		},
 		{
 			name: "R720 secondary",
@@ -98,6 +128,9 @@ if (!servers.length) {
 			warnspeed: "3000",
 			sensordataRaw: [],
 			sensordata: [],
+			fancurve: [...DEFAULT_BASELINE_FAN_CURVE],
+			reactiveFanCurve: [...DEFAULT_REACTIVE_FAN_CURVE],
+			errorFanSpeed: DEFAULT_ERROR_FAN_SPEED,
 		},
 	].map(applyServerDefaults)
 }
@@ -186,27 +219,39 @@ async function updateServers() {
 			sensordata: config.sensordata,
 		})
 		if (config.manualFanControl) {
-			let temperature = config.sensordata
-				.filter((x) => x.unit === "degrees C")
-				.map((x) => x.value)
-				.sort((a, b) => b - a)[0]
-
-			// Determine fan speed
-			let table = new Array(100).fill(0)
-			table = table.map((_, i) => {
-				let num1 = Math.max(0, Math.floor(i / (100 / (config.fancurve.length - 1))))
-				let num2 = Math.min(config.fancurve.length - 1, Math.ceil((i + 0.1) / (100 / (config.fancurve.length - 1))))
-				// Interpolate between the numbers on the graph
-				let diff = config.fancurve[num2] - config.fancurve[num1] // Difference in fan % between 20c and 40c
-				let perC = diff / (100 / (config.fancurve.length - 1)) // Difference in fan% between 20c and 21c
-				let lowerC = config.fancurve[num1] // Wanted fan% at 20c
-				return lowerC + perC * (i / (100 / (config.fancurve.length - 1)) - num1) * 20 // Calculate target fan speed for temperature "i"
-			})
-
-			let target_fan_speed = Math.round(table[Math.floor(temperature) || 99])
-			console.log("Highest temperature is", temperature, "Setting fan speed", target_fan_speed, "%")
-			// Set fan speed on iDRAC
-			setFanSpeed(config, target_fan_speed || 40)
+			const ambientTemperature = getAmbientTemperature(config.sensordata)
+			const cpuTemperature = getMaxCpuTemperature(config.sensordata)
+			const fallbackTemperature = getFallbackTemperature(config.sensordata)
+			const baselineTable = buildFanCurveTable(config.fancurve)
+			const reactiveTable = buildFanCurveTable(config.reactiveFanCurve)
+	let baselineFanSpeed = getFanSpeedFromTable(baselineTable, ambientTemperature)
+	if (baselineFanSpeed === undefined) {
+		baselineFanSpeed = getFanSpeedFromTable(baselineTable, fallbackTemperature)
+	}
+	let reactiveFanSpeed = getFanSpeedFromTable(reactiveTable, cpuTemperature)
+	if (reactiveFanSpeed === undefined) {
+		reactiveFanSpeed = getFanSpeedFromTable(reactiveTable, fallbackTemperature)
+	}
+	const computedSpeeds = [baselineFanSpeed, reactiveFanSpeed].filter((value) => Number.isFinite(value))
+	let targetFanSpeed = computedSpeeds.length ? Math.max(...computedSpeeds) : undefined
+	if (!Number.isFinite(targetFanSpeed)) {
+		targetFanSpeed = getNumericFanSpeed(config.errorFanSpeed)
+	}
+	targetFanSpeed = clamp(Number.isFinite(targetFanSpeed) ? targetFanSpeed : DEFAULT_ERROR_FAN_SPEED, 0, 100)
+			console.log(
+				"Ambient temp:",
+				ambientTemperature,
+				"CPU temp:",
+				cpuTemperature,
+				"Baseline speed:",
+				baselineFanSpeed,
+				"Reactive speed:",
+				reactiveFanSpeed,
+				"Setting fan speed",
+				targetFanSpeed,
+				"%"
+			)
+			setFanSpeed(config, targetFanSpeed || 40)
 		}
 	}
 	// Report metrics to prometheus
