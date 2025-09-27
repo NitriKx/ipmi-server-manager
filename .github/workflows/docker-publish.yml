@@ -30,15 +30,8 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Restore Docker build cache
-        uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.ref_name }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-${{ github.ref_name }}-
-            ${{ runner.os }}-buildx-
+          driver: docker-container
 
       - name: Run tests
         env:
@@ -49,11 +42,7 @@ jobs:
             docker compose --file docker-compose.test.yml build --progress plain
             docker compose --file docker-compose.test.yml run --rm sut
           else
-            CACHE_FROM="type=local,src=/tmp/.buildx-cache"
-            CACHE_TO="type=local,dest=/tmp/.buildx-cache-new,mode=max"
-            docker build . --file Dockerfile --cache-from ${CACHE_FROM} --cache-to ${CACHE_TO}
-            rm -rf /tmp/.buildx-cache
-            mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
+            docker buildx build . --file Dockerfile --load
           fi
 
   # Push image to GitHub Packages.
@@ -73,16 +62,8 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Restore Docker build cache
-        id: build-cache
-        uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.ref_name }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-${{ github.ref_name }}-
-            ${{ runner.os }}-buildx-
+          driver: docker-container
 
       - name: Extract Docker metadata
         id: meta
@@ -105,11 +86,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-
-      - name: Persist Docker build cache
-        if: steps.build-cache.outputs.cache-hit != 'true'
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
