@@ -42,6 +42,7 @@ const {
 	getFanSpeedFromTable,
 } = require("./fanCurve")
 const { getAmbientTemperature, getMaxCpuTemperature, getFallbackTemperature } = require("./temperature")
+const { chooseTargetFanSpeed } = require("./fanControl")
 
 const DEFAULT_ERROR_FAN_SPEED = 100
 
@@ -235,13 +236,12 @@ async function updateServers() {
 			if (reactiveFanSpeed === undefined) {
 				reactiveFanSpeed = getFanSpeedFromTable(reactiveTable, fallbackTemperature)
 			}
-			const computedSpeeds = [baselineFanSpeed, reactiveFanSpeed].filter((value) => Number.isFinite(value))
-			let targetFanSpeed = computedSpeeds.length ? Math.max(...computedSpeeds) : undefined
-			if (!Number.isFinite(targetFanSpeed)) {
-				targetFanSpeed = getNumericFanSpeed(config.errorFanSpeed)
-			}
-			
-			targetFanSpeed = clamp(Number.isFinite(targetFanSpeed) ? targetFanSpeed : DEFAULT_ERROR_FAN_SPEED, 0, 100)
+			const targetFanSpeed = chooseTargetFanSpeed({
+				baselineFanSpeed,
+				reactiveFanSpeed,
+				errorFanSpeed: getNumericFanSpeed(config.errorFanSpeed),
+				defaultErrorFanSpeed: DEFAULT_ERROR_FAN_SPEED,
+			})
 			console.log(
 				"Ambient temp:",
 				ambientTemperature,
