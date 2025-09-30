@@ -34,20 +34,30 @@ function getSensors(config) {
 		})
 	})
 }
+
+
 function enableManualFancontrol(config) {
-	return new Promise((resolve) => {
+	return new Promise((resolve, reject) => {
 		let command = `ipmitool -I lanplus -H ${config.address} -U ${config.username} -P '${config.password}' raw 0x30 0x30 0x01 0x00`
 		exec(command, (error, out, err) => {
 			logCommandResult("enableManualFancontrol", error, out, err)
+			if (error) {
+				reject(error)
+				return
+			}
 			resolve(out)
 		})
 	})
 }
 function enableAutomaticFancontrol(config) {
-	return new Promise((resolve) => {
+	return new Promise((resolve, reject) => {
 		let command = `ipmitool -I lanplus -H ${config.address} -U ${config.username} -P '${config.password}' raw 0x30 0x30 0x01 0x01`
 		exec(command, (error, out, err) => {
 			logCommandResult("enableAutomaticFancontrol", error, out, err)
+			if (error) {
+				reject(error)
+				return
+			}
 			resolve(out)
 		})
 	})

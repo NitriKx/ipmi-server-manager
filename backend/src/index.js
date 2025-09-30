@@ -57,6 +57,7 @@ const {
 	buildFanCurveTable,
 	normalizeFanCurve,
 	getFanSpeedFromTable,
+	getFanSpeedLookupDetails,
 } = require("./fanCurve")
 const { getAmbientTemperature, getMaxCpuTemperature, getFallbackTemperature } = require("./temperature")
 const { chooseTargetFanSpeed } = require("./fanControl")
@@ -245,13 +246,19 @@ async function updateServers() {
 			const baselineTable = buildFanCurveTable(config.fancurve)
 			const reactiveTable = buildFanCurveTable(config.reactiveFanCurve)
 			
-			let baselineFanSpeed = getFanSpeedFromTable(baselineTable, ambientTemperature)
+			const baselineLookup = getFanSpeedLookupDetails(config.fancurve, ambientTemperature)
+			let baselineFanSpeed = baselineLookup?.speed
+			let baselineFallbackLookup
 			if (baselineFanSpeed === undefined) {
-				baselineFanSpeed = getFanSpeedFromTable(baselineTable, fallbackTemperature)
+				baselineFallbackLookup = getFanSpeedLookupDetails(config.fancurve, fallbackTemperature)
+				baselineFanSpeed = baselineFallbackLookup?.speed
 			}
-			let reactiveFanSpeed = getFanSpeedFromTable(reactiveTable, cpuTemperature)
+			const reactiveLookup = getFanSpeedLookupDetails(config.reactiveFanCurve, cpuTemperature)
+			let reactiveFanSpeed = reactiveLookup?.speed
+			let reactiveFallbackLookup
 			if (reactiveFanSpeed === undefined) {
-				reactiveFanSpeed = getFanSpeedFromTable(reactiveTable, fallbackTemperature)
+				reactiveFallbackLookup = getFanSpeedLookupDetails(config.reactiveFanCurve, fallbackTemperature)
+				reactiveFanSpeed = reactiveFallbackLookup?.speed
 			}
 			const targetFanSpeed = chooseTargetFanSpeed({
 				baselineFanSpeed,
@@ -264,10 +271,64 @@ async function updateServers() {
 				ambientTemperature,
 				"CPU temp:",
 				cpuTemperature,
-				"Baseline speed:",
-				baselineFanSpeed,
-				"Reactive speed:",
-				reactiveFanSpeed,
+				"Baseline lookup:",
+				JSON.stringify(
+					{
+						segmentSize: baselineLookup?.segmentSize,
+						curveLength: baselineLookup?.curveLength,
+						inputTemperature: baselineLookup?.inputTemperature,
+						appliedTemperature: baselineLookup?.appliedTemperature,
+						lowerIndex: baselineLookup?.lowerIndex,
+						upperIndex: baselineLookup?.upperIndex,
+						lowerValue: baselineLookup?.lowerValue,
+						upperValue: baselineLookup?.upperValue,
+						interpolationRatio: baselineLookup?.interpolationRatio,
+						rawSpeed: baselineLookup?.rawSpeed,
+						speed: baselineFanSpeed,
+						fallbackLookup:
+							baselineFallbackLookup && {
+								inputTemperature: baselineFallbackLookup.inputTemperature,
+								appliedTemperature: baselineFallbackLookup.appliedTemperature,
+								lowerIndex: baselineFallbackLookup.lowerIndex,
+								upperIndex: baselineFallbackLookup.upperIndex,
+								lowerValue: baselineFallbackLookup.lowerValue,
+								upperValue: baselineFallbackLookup.upperValue,
+								interpolationRatio: baselineFallbackLookup.interpolationRatio,
+								rawSpeed: baselineFallbackLookup.rawSpeed,
+								speed: baselineFallbackLookup.speed,
+							},
+					},
+					(_, value) => (typeof value === "number" && !Number.isFinite(value) ? null : value)
+				),
+				"Reactive lookup:",
+				JSON.stringify(
+					{
+						segmentSize: reactiveLookup?.segmentSize,
+						curveLength: reactiveLookup?.curveLength,
+						inputTemperature: reactiveLookup?.inputTemperature,
+						appliedTemperature: reactiveLookup?.appliedTemperature,
+						lowerIndex: reactiveLookup?.lowerIndex,
+						upperIndex: reactiveLookup?.upperIndex,
+						lowerValue: reactiveLookup?.lowerValue,
+						upperValue: reactiveLookup?.upperValue,
+						interpolationRatio: reactiveLookup?.interpolationRatio,
+						rawSpeed: reactiveLookup?.rawSpeed,
+						speed: reactiveFanSpeed,
+						fallbackLookup:
+							reactiveFallbackLookup && {
+								inputTemperature: reactiveFallbackLookup.inputTemperature,
+								appliedTemperature: reactiveFallbackLookup.appliedTemperature,
+								lowerIndex: reactiveFallbackLookup.lowerIndex,
+								upperIndex: reactiveFallbackLookup.upperIndex,
+								lowerValue: reactiveFallbackLookup.lowerValue,
+								upperValue: reactiveFallbackLookup.upperValue,
+								interpolationRatio: reactiveFallbackLookup.interpolationRatio,
+								rawSpeed: reactiveFallbackLookup.rawSpeed,
+								speed: reactiveFallbackLookup.speed,
+							},
+					},
+					(_, value) => (typeof value === "number" && !Number.isFinite(value) ? null : value)
+				),
 				"Setting fan speed",
 				targetFanSpeed,
 				"%"
