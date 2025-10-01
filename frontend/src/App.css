@@ -43,3 +43,15 @@
 .ant-statistic-content-suffix {
 	font-size: 14px;
 }
+
+.site-header {
+	position: sticky;
+	top: 0;
+	z-index: 100;
+	width: 100%;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.site-layout-background {
+	background: transparent;
+}
