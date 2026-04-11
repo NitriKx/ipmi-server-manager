@@ -13,6 +13,7 @@ var app = express()
 var server = http.createServer(app)
 var { Server } = require("socket.io")
 var io = new Server(server, {
+	addTrailingSlash: false,
 	cors: {
 		origin: ["https://admin.socket.io", process.env.SOCKET_ADMIN_ORIGIN].filter(Boolean),
 		credentials: true,
