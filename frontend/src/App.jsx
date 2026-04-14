@@ -26,7 +26,7 @@ import InlineSlider from "./components/InlineSlider"
 
 const { TabPane } = Tabs
 const { SubMenu } = Menu
-const { Content, Sider } = Layout
+const { Content, Header } = Layout
 let socket
 
 let sliderMarks = {
@@ -80,13 +80,12 @@ class App extends Component {
 		return (
 			<ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
 				<Layout style={{ height: "100%" }}>
-					<Sider width={200} className="site-layout-background">
+					<Header className="site-header" style={{ padding: 0, background: "#001529" }}>
 						<Menu
 							multiple
-							mode="inline"
+							mode="horizontal"
 							defaultSelectedKeys={this.state.selectedKeys}
-							defaultOpenKeys={["servers"]}
-							style={{ height: "100%", borderRight: 0 }}
+							style={{ lineHeight: "64px" }}
 							onSelect={({ selectedKeys }) => {
 								console.log(selectedKeys)
 								this.setState({ selectedKeys })
@@ -107,14 +106,15 @@ class App extends Component {
 								Admin
 							</Menu.Item>
 						</Menu>
-					</Sider>
+					</Header>
 					<Layout>
 						<Content
 							className="site-layout-background"
 							style={{
-								padding: 0,
+								padding: 24,
 								margin: 0,
 								minHeight: 280,
+								overflowY: "auto",
 							}}
 						>
 							{servers?.map(renderServerOverview)}
